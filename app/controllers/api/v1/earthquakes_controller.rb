@@ -2,9 +2,16 @@ class Api::V1::EarthquakesController < ApplicationController
   before_action :authenticate_user!
   before_action :set_earthquake, only: [:show, :update, :destroy]
   
+  # def index
+  #   @earthquakes = Rails.cache.fetch("earthquakes/by_user/#{current_user.id}", expires_in: 12.hours) do
+  #     @earthquakes = Earthquake.by_user(current_user).page(params[:page]).per(20)
+  #   end
+  #   render json: @earthquakes
+  # end
   def index
-    @earthquakes = Rails.cache.fetch("earthquakes/by_user/#{current_user.id}", expires_in: 12.hours) do
-      @earthquakes = Earthquake.by_user(current_user).page(params[:page]).per(20)
+    cache_key = [current_user, 'earthquakes', params[:page]]
+    @earthquakes = Rails.cache.fetch(cache_key, expires_in: 12.hours) do
+      Earthquake.by_user(current_user).paginate(page: params[:page], per_page: 20).to_a
     end
     render json: @earthquakes
   end
